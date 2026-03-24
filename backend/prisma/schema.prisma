@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id         String   @id @default(uuid())
+  name       String
+  rif        String?
+  configJson Json? // Store logo, colors, custom exchange rate, IGTF toggle, etc.
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  users     User[]
+  products  Product[]
+  sales     Sale[]
+  customers Customer[]
+  productionLogs ProductionLog[]
+  customerTransactions CustomerTransaction[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   @default("seller") // "admin" or "seller"
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales Sale[]
+}
+
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  priceBaseUsd Decimal  @db.Decimal(10, 2)
+  stockActual  Int      @default(0)
+  imageUrl     String?  // Base64 encoded image or URL
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  saleItems SaleItem[]
+  sourceProductions ProductionLog[] @relation("SourceProduct")
+  targetProductions ProductionLog[] @relation("TargetProduct")
+}
+
+model Sale {
+  id           String   @id @default(uuid())
+  totalUsd     Decimal  @db.Decimal(10, 2)
+  totalVes     Decimal  @db.Decimal(10, 2)
+  tasaMomento  Decimal  @db.Decimal(10, 2)
+  paymentType  String // "contado", "fiao"
+  paymentMethod String // "efectivo", "transferencia", "pago_movil", "zelle"
+  paymentReference String?
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  customerId   String?
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  createdAt    DateTime @default(now())
+
+  items SaleItem[]
+}
+
+model SaleItem {
+  id              String  @id @default(uuid())
+  saleId          String
+  sale            Sale    @relation(fields: [saleId], references: [id])
+  productId       String
+  product         Product @relation(fields: [productId], references: [id])
+  cantidad        Int
+  precioUnitarioUsd Decimal @db.Decimal(10, 2)
+}
+
+model Customer {
+  id               String   @id @default(uuid())
+  nombre           String
+  saldoPendienteUsd Decimal  @default(0) @db.Decimal(10, 2)
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  sales Sale[]
+  transactions CustomerTransaction[]
+}
+
+model CustomerTransaction {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  type        String   // "DEBT" or "PAYMENT"
+  amountUsd   Decimal  @db.Decimal(10, 2)
+  description String?
+  paymentReference String?
+  createdAt   DateTime @default(now())
+}
+
+
+model GlobalConfig {
+  id      String  @id @default("global")
+  bcvRate Decimal @db.Decimal(10, 2)
+}
+
+model ProductionLog {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  sourceProductId String
+  sourceProduct   Product  @relation("SourceProduct", fields: [sourceProductId], references: [id])
+  sourceQuantity  Int
+  targetProductId String
+  targetProduct   Product  @relation("TargetProduct", fields: [targetProductId], references: [id])
+  targetQuantity  Int
+  createdAt       DateTime @default(now())
+}
+

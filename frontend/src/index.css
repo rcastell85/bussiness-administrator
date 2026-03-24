@@ -1,0 +1,104 @@
+:root {
+  /* Colors - Utility Design */
+  --bg-primary: #f8f9fa;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --success: #28a745;
+  --danger: #dc3545;
+  --brand: #007bff;
+  --border: #dee2e6;
+  --white: #ffffff;
+
+  /* Typography */
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+
+  /* Utilities */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  /* Lock the viewport to avoid dual-scrolling */
+}
+
+input,
+button {
+  font-family: inherit;
+  font-size: 16px;
+  /* Prevents auto-zoom on iOS */
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+ul {
+  list-style: none;
+}
+
+/* Base Layout Utility */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  /* Fixed height to match viewport */
+  max-width: 600px;
+  /* Mobile focus, can be larger on desktop */
+  margin: 0 auto;
+  position: relative;
+  background: var(--white);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.scroll-content {
+  flex: 1;
+  padding: var(--spacing-md);
+  overflow-y: auto;
+  /* Internal scrolling for the content body */
+}
+
+.sticky-header {
+  flex-shrink: 0;
+  z-index: 100;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bottom-nav {
+  flex-shrink: 0;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: var(--spacing-xs) 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
