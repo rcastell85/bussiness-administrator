@@ -10,7 +10,10 @@ RUN npm install
 
 COPY . .
 
+RUN npx prisma generate
+RUN npm run build
+
 # Expone el puerto por defecto de NestJS
 EXPOSE 3000
 
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start:prod"]
