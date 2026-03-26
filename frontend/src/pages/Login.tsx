@@ -85,24 +85,6 @@ const Login = () => {
               : (isRegister ? 'Crear Cuenta' : 'Entrar')}
           </button>
 
-          <div style={{ marginTop: '20px', fontSize: '14px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>
-              {isRegister ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}
-            </span>
-            {' '}
-            <button
-              type="button"
-              className="toggle-btn"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setEmail('');
-                setPassword('');
-                setError('');
-              }}
-            >
-              {isRegister ? 'Inicia sesión' : 'Crear cuenta'}
-            </button>
-          </div>
         </form>
       </div>
 

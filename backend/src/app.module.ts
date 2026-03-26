@@ -10,9 +10,22 @@ import { ProductsModule } from './products/products.module';
 import { CustomersModule } from './customers/customers.module';
 import { SalesModule } from './sales/sales.module';
 import { ReportsModule } from './reports/reports.module';
+import { ScraperModule } from './scraper/scraper.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
-  imports: [PrismaModule, TenantsModule, AuthModule, RatesModule, ProductsModule, CustomersModule, SalesModule, ReportsModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    PrismaModule, 
+    TenantsModule, 
+    AuthModule, 
+    RatesModule, 
+    ProductsModule, 
+    CustomersModule, 
+    SalesModule, 
+    ReportsModule,
+    ScraperModule
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
