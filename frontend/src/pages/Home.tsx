@@ -20,16 +20,6 @@ const Home = () => {
         setIsDetailsModalOpen(true);
     };
 
-    const handleSaleUpdated = () => {
-        // Just refresh the whole dashboard to reflect any assigned customer or reference change
-        setTimeFilter(prev => {
-            const current = prev;
-            // Hacky forced refetch
-            return current; 
-        });
-        // Better way: we have `fetchDashboardData` in useEffect, let's extract it or just rely on a counter
-    };
-
     useEffect(() => {
         const fetchDashboardData = async () => {
             setLoading(true);

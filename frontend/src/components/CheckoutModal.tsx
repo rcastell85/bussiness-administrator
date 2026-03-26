@@ -11,7 +11,7 @@ interface CheckoutModalProps {
 }
 
 const CheckoutModal = ({ isOpen, onClose, exchangeRate }: CheckoutModalProps) => {
-    const { items, getTotalUsd, getTotalVes, clearCart } = useCartStore();
+    const { items, getTotalUsd, clearCart } = useCartStore();
     const [paymentMethod, setPaymentMethod] = useState<'EFECTIVO_USD' | 'PAGO_MOVIL' | 'EFECTIVO_VES' | 'TRANSFERENCIA' | 'ZELLE'>('EFECTIVO_USD');
     const [isCredit, setIsCredit] = useState(false);
     const [customers, setCustomers] = useState<any[]>([]);

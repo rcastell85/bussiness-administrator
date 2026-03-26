@@ -5,7 +5,6 @@ interface AuthState {
     user: any | null;
     token: string | null;
     tenantId: string | null;
-    tenantId: string | null;
     isAuthenticated: boolean;
     exchangeRate: number;
     setAuth: (user: any, token: string, tenantId: string) => void;
