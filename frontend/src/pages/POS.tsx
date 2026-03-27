@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import client from '../api/client';
 import { Search } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
@@ -24,6 +24,10 @@ const POS = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const getItemQuantity = (id: string) => {
     return items.find((i: any) => i.id === id)?.quantity || 0;
