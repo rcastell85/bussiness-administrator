@@ -228,8 +228,8 @@ const Home = () => {
                 .stat-value { font-size: 28px; font-weight: 700; }
                 
                 .recent-sales-list {
-                    background: white; border-radius: var(--radius-md); border: 1px solid var(--border); 
-                    overflow-y: auto; flex: 1; margin-bottom: 0; min-height: 200px;
+                    background: white; border-radius: var(--radius-md); border: 1px solid var(--border);
+                    margin-bottom: 0;
                 }
                 .sale-item {
                     display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border);
