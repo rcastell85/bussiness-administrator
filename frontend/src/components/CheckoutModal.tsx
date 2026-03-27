@@ -61,9 +61,9 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess, exchangeRate }: CheckoutMod
 
             await client.post('/sales', saleData);
             setSuccess(true);
-            if (onSuccess) onSuccess();
             setTimeout(() => {
                 clearCart();
+                if (onSuccess) onSuccess();
                 setSuccess(false);
                 onClose();
             }, 1500);
