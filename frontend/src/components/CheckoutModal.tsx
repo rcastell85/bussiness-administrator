@@ -56,7 +56,7 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess, exchangeRate }: CheckoutMod
                 paymentType: isCredit ? 'fiao' : 'contado',
                 paymentMethod: isCredit ? 'credito' : paymentMethod,
                 paymentReference: paymentReference || undefined,
-                customerId: isCredit ? selectedCustomerId : undefined,
+                customerId: selectedCustomerId || undefined,
             };
 
             await client.post('/sales', saleData);
@@ -129,29 +129,27 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess, exchangeRate }: CheckoutMod
                             </div>
                         )}
 
-                        {isCredit && (
-                            <div className="section">
-                                <label>Seleccionar Cliente</label>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <select
-                                        value={selectedCustomerId}
-                                        onChange={(e) => setSelectedCustomerId(e.target.value)}
-                                        className="customer-select"
-                                    >
-                                        <option value="">-- Elige un cliente --</option>
-                                        {customers.map(c => (
-                                            <option key={c.id} value={c.id}>{c.nombre}</option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        className="add-customer-btn"
-                                        onClick={() => setCustomerModalOpen(true)}
-                                    >
-                                        <Plus size={16} /> <span>Nuevo Cliente</span>
-                                    </button>
-                                </div>
+                        <div className="section">
+                            <label>Cliente (Opcional)</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <select
+                                    value={selectedCustomerId}
+                                    onChange={(e) => setSelectedCustomerId(e.target.value)}
+                                    className="customer-select"
+                                >
+                                    <option value="">-- Sin cliente --</option>
+                                    {customers.map(c => (
+                                        <option key={c.id} value={c.id}>{c.nombre}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    className="add-customer-btn"
+                                    onClick={() => setCustomerModalOpen(true)}
+                                >
+                                    <Plus size={16} /> <span>Nuevo</span>
+                                </button>
                             </div>
-                        )}
+                        </div>
 
                         <button
                             className="confirm-btn"

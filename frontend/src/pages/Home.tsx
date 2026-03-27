@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import client from '../api/client';
-import { Download, TrendingUp, Clock, FileText, ChevronRight } from 'lucide-react';
+import { Download, TrendingUp, Clock, FileText, ChevronRight, Search } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format, startOfDay, startOfWeek, startOfMonth, endOfDay } from 'date-fns';
@@ -12,6 +12,7 @@ const Home = () => {
     const [sales, setSales] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month'>('today');
+    const [saleSearch, setSaleSearch] = useState('');
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
 
@@ -59,6 +60,23 @@ const Home = () => {
         };
         fetchDashboardData();
     }, [timeFilter]);
+
+    const filteredSales = useMemo(() => {
+        const q = saleSearch.toLowerCase().trim();
+        if (!q) return sales;
+        return sales.filter(s => {
+            const fields = [
+                s.paymentType,
+                s.paymentMethod,
+                s.paymentReference,
+                s.customer?.nombre,
+                Number(s.totalUsd).toFixed(2),
+                Number(s.totalVes).toFixed(2),
+                ...(s.items || []).map((i: any) => i.product?.name),
+            ].filter(Boolean).join(' ').toLowerCase();
+            return fields.includes(q);
+        });
+    }, [sales, saleSearch]);
 
     const handleGeneratePDF = () => {
         const doc = new jsPDF();
@@ -157,9 +175,19 @@ const Home = () => {
                         </div>
                     </div>
 
-                    <h3 style={{ margin: '32px 0 16px', fontSize: '18px', flexShrink: 0 }}>Ventas del Periodo</h3>
+                    <h3 style={{ margin: '32px 0 12px', fontSize: '18px', flexShrink: 0 }}>Ventas del Periodo</h3>
+                    <div style={{ position: 'relative', marginBottom: '12px' }}>
+                        <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#adb5bd' }} />
+                        <input
+                            type="text"
+                            placeholder="Buscar por cliente, monto, método, referencia..."
+                            value={saleSearch}
+                            onChange={e => setSaleSearch(e.target.value)}
+                            style={{ width: '100%', padding: '8px 8px 8px 32px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                    </div>
                     <div className="recent-sales-list">
-                        {sales.length === 0 ? <p className="empty-state">No hay ventas en este periodo.</p> : sales.slice(0, 20).map(s => (
+                        {filteredSales.length === 0 ? <p className="empty-state">{saleSearch ? 'Sin resultados para esa búsqueda.' : 'No hay ventas en este periodo.'}</p> : filteredSales.slice(0, 50).map(s => (
                             <div key={s.id} className="sale-item" onClick={() => handleSaleClick(s.id)}>
                                 <div className="sale-info">
                                     <strong>{s.paymentType === 'fiao' ? `Fiao: ${s.customer?.nombre || '...'}` : 'Venta Contado'}</strong>
@@ -229,7 +257,7 @@ const Home = () => {
                 
                 .recent-sales-list {
                     background: white; border-radius: var(--radius-md); border: 1px solid var(--border);
-                    margin-bottom: 0;
+                    max-height: 520px; overflow-y: auto; margin-bottom: 80px;
                 }
                 .sale-item {
                     display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border);
