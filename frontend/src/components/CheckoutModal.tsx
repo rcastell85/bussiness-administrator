@@ -7,10 +7,11 @@ import CustomerModal from './CustomerModal';
 interface CheckoutModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
     exchangeRate: number;
 }
 
-const CheckoutModal = ({ isOpen, onClose, exchangeRate }: CheckoutModalProps) => {
+const CheckoutModal = ({ isOpen, onClose, onSuccess, exchangeRate }: CheckoutModalProps) => {
     const { items, getTotalUsd, clearCart } = useCartStore();
     const [paymentMethod, setPaymentMethod] = useState<'EFECTIVO_USD' | 'PAGO_MOVIL' | 'EFECTIVO_VES' | 'TRANSFERENCIA' | 'ZELLE'>('EFECTIVO_USD');
     const [isCredit, setIsCredit] = useState(false);
@@ -60,6 +61,7 @@ const CheckoutModal = ({ isOpen, onClose, exchangeRate }: CheckoutModalProps) =>
 
             await client.post('/sales', saleData);
             setSuccess(true);
+            if (onSuccess) onSuccess();
             setTimeout(() => {
                 clearCart();
                 setSuccess(false);

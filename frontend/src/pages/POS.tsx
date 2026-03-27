@@ -14,19 +14,16 @@ const POS = () => {
   const { items, addItem, removeItem, clearCart, getTotalUsd, getTotalVes } = useCartStore();
   const { exchangeRate } = useAuthStore();
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const { data } = await client.get('/products?sortBy=sales');
-        setProducts(data);
-      } catch (err) {
-        console.error('Error fetching products', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+  const fetchProducts = async () => {
+    try {
+      const { data } = await client.get('/products?sortBy=sales');
+      setProducts(data);
+    } catch (err) {
+      console.error('Error fetching products', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getItemQuantity = (id: string) => {
     return items.find((i: any) => i.id === id)?.quantity || 0;
@@ -129,6 +126,7 @@ const POS = () => {
       <CheckoutModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchProducts}
         exchangeRate={exchangeRate}
       />
 
