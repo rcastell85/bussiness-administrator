@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TenantsService } from '../tenants/tenants.service';
 
 @Injectable()
 export class SuppliesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private tenantsService: TenantsService,
+  ) {}
 
-  async findAll(tenantId: string) {
+  async findAll() {
+    const tenantId = this.tenantsService.getTenantId();
     return this.prisma.supplyItem.findMany({
       where: { tenantId },
       include: {
@@ -18,7 +23,8 @@ export class SuppliesService {
     });
   }
 
-  async create(tenantId: string, data: { name: string; unit: string; initialStock?: number }) {
+  async create(data: { name: string; unit: string; initialStock?: number }) {
+    const tenantId = this.tenantsService.getTenantId();
     return this.prisma.supplyItem.create({
       data: {
         name: data.name,
@@ -29,8 +35,13 @@ export class SuppliesService {
     });
   }
 
-  async recordHistory(tenantId: string, data: { supplyItemId: string; type: 'ENTRY' | 'EXIT'; quantity: number; note?: string }) {
+  async recordHistory(data: { supplyItemId: string; type: 'ENTRY' | 'EXIT'; quantity: number; note?: string }) {
+    const tenantId = this.tenantsService.getTenantId();
     return this.prisma.$transaction(async (tx) => {
+      // Check ownership
+      const item = await tx.supplyItem.findFirst({ where: { id: data.supplyItemId, tenantId } });
+      if (!item) throw new Error('Item not found');
+
       // Create history record
       const history = await tx.supplyHistory.create({
         data: {
@@ -56,7 +67,8 @@ export class SuppliesService {
     });
   }
 
-  async delete(tenantId: string, id: string) {
+  async delete(id: string) {
+    const tenantId = this.tenantsService.getTenantId();
     // Check if it belongs to tenant
     const item = await this.prisma.supplyItem.findFirst({ where: { id, tenantId } });
     if (!item) throw new Error('Item not found');
