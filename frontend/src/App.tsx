@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Customers from './pages/Customers';
+import Supplies from './pages/Supplies';
 import Login from './pages/Login';
 import SuperAdmin from './pages/SuperAdmin';
 import { useAuthStore } from './store/useAuthStore';
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/pos" element={<POS />} />
           <Route path="/inventory" element={<Inventory />} />
+          <Route path="/supplies" element={<Supplies />} />
           <Route path="/customers" element={<Customers />} />
         </Route>
       </Routes>

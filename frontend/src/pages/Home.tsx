@@ -11,7 +11,9 @@ const Home = () => {
     const [summary, setSummary] = useState<any>(null);
     const [sales, setSales] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month'>('today');
+    const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month' | 'custom'>('today');
+    const [customStart, setCustomStart] = useState('');
+    const [customEnd, setCustomEnd] = useState('');
     const [saleSearch, setSaleSearch] = useState('');
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
@@ -22,6 +24,7 @@ const Home = () => {
     };
 
     useEffect(() => {
+        if (timeFilter === 'custom' && (!customStart || !customEnd)) return;
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
@@ -30,14 +33,16 @@ const Home = () => {
                 let end = endOfDay(now);
 
                 if (timeFilter === 'week') {
-                    start = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+                    start = startOfWeek(now, { weekStartsOn: 1 });
                 } else if (timeFilter === 'month') {
                     start = startOfMonth(now);
+                } else if (timeFilter === 'custom' && customStart && customEnd) {
+                    start = startOfDay(new Date(customStart + 'T00:00:00'));
+                    end = endOfDay(new Date(customEnd + 'T00:00:00'));
                 } else {
                     start = startOfDay(now);
                 }
 
-                // Call backend with specific dates
                 const [summaryRes, salesRes] = await Promise.all([
                     client.get(`/reports/summary?start=${start.toISOString()}&end=${end.toISOString()}`),
                     client.get('/sales')
@@ -45,7 +50,6 @@ const Home = () => {
 
                 setSummary(summaryRes.data);
 
-                // Filter sales for the list view
                 const filteredSales = salesRes.data.filter((s: any) => {
                     const d = new Date(s.createdAt);
                     return d >= start && d <= end;
@@ -59,7 +63,7 @@ const Home = () => {
             }
         };
         fetchDashboardData();
-    }, [timeFilter]);
+    }, [timeFilter, customStart, customEnd]);
 
     const filteredSales = useMemo(() => {
         const q = saleSearch.toLowerCase().trim();
@@ -126,26 +130,36 @@ const Home = () => {
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 24px 0', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 16px 0', flexShrink: 0 }}>
                 <div className="filter-tabs">
-                    <button
-                        className={timeFilter === 'today' ? 'active' : ''}
-                        onClick={() => setTimeFilter('today')}
-                    >Hoy</button>
-                    <button
-                        className={timeFilter === 'week' ? 'active' : ''}
-                        onClick={() => setTimeFilter('week')}
-                    >Semana</button>
-                    <button
-                        className={timeFilter === 'month' ? 'active' : ''}
-                        onClick={() => setTimeFilter('month')}
-                    >Mes</button>
+                    <button className={timeFilter === 'today' ? 'active' : ''} onClick={() => setTimeFilter('today')}>Hoy</button>
+                    <button className={timeFilter === 'week' ? 'active' : ''} onClick={() => setTimeFilter('week')}>Semana</button>
+                    <button className={timeFilter === 'month' ? 'active' : ''} onClick={() => setTimeFilter('month')}>Mes</button>
+                    <button className={timeFilter === 'custom' ? 'active' : ''} onClick={() => setTimeFilter('custom')}>Período</button>
                 </div>
                 <button onClick={handleGeneratePDF} className="export-btn" disabled={sales.length === 0 || loading}>
                     <Download size={18} />
                     <span>PDF</span>
                 </button>
             </div>
+
+            {timeFilter === 'custom' && (
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', alignItems: 'center' }}>
+                    <input
+                        type="date"
+                        value={customStart}
+                        onChange={e => setCustomStart(e.target.value)}
+                        style={{ flex: 1, padding: '8px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
+                    />
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>→</span>
+                    <input
+                        type="date"
+                        value={customEnd}
+                        onChange={e => setCustomEnd(e.target.value)}
+                        style={{ flex: 1, padding: '8px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
+                    />
+                </div>
+            )}
 
             {loading ? <div className="loading-state">Calculando totales...</div> : (
                 <>

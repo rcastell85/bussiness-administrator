@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, ShoppingCart, Package, Users, LogOut, RefreshCw } from 'lucide-react';
+import { Home, ShoppingCart, Package, Users, LogOut, RefreshCw, Boxes } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import GuidedTour from './GuidedTour';
 
@@ -71,7 +71,11 @@ const Layout = () => {
                 </NavLink>
                 <NavLink to="/inventory" className={({ isActive }: { isActive: boolean }) => `nav-item nav-inventory ${isActive ? 'active' : ''}`}>
                     <Package size={24} />
-                    <span>Inventario</span>
+                    <span>Productos</span>
+                </NavLink>
+                <NavLink to="/supplies" className={({ isActive }: { isActive: boolean }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <Boxes size={24} />
+                    <span>Insumos</span>
                 </NavLink>
                 <NavLink to="/customers" className={({ isActive }: { isActive: boolean }) => `nav-item ${isActive ? 'active' : ''}`}>
                     <Users size={24} />

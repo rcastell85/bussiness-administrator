@@ -48,7 +48,7 @@ const Inventory = () => {
     return (
         <div style={{ paddingBottom: '80px' }}>
             <div className="header-actions">
-                <h2>Inventario</h2>
+                <h2>Productos</h2>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="text-btn transform" onClick={() => setTransformModalOpen(true)}>
                         <ArrowRightLeft size={16} /> Transformar
