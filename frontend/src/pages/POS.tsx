@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import client from '../api/client';
 import { Search } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
