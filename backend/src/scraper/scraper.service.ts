@@ -12,21 +12,21 @@ export class ScraperService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
   onModuleInit() {
-    this.logger.log('Scraper service initialized, running initial scrape in 5 seconds...');
+    console.log('>>> [BCV SCRAPER] Service initialized, running initial scrape in 5 seconds...');
     setTimeout(() => {
       this.scrapeBCVRate();
     }, 5000);
   }
 
-  @Cron(CronExpression.EVERY_2_HOURS)
+  @Cron('0 */2 * * * *') // Run every 2 minutes
   async handleCron() {
-    this.logger.log('Cron triggered: Scraping BCV rate...');
+    console.log('>>> [BCV SCRAPER] Cron triggered: Scraping BCV rate...');
     await this.scrapeBCVRate();
   }
 
   async scrapeBCVRate() {
     try {
-      this.logger.log('Fetching BCV website...');
+      console.log('>>> [BCV SCRAPER] Fetching BCV website...');
       const agent = new https.Agent({ rejectUnauthorized: false });
       const response = await axios.get('https://www.bcv.org.ve/', { httpsAgent: agent, timeout: 30000 });
       
@@ -34,17 +34,17 @@ export class ScraperService implements OnModuleInit {
       const rateText = $('#dolar strong').text().trim().replace(',', '.');
       
       if (!rateText) {
-        this.logger.warn('Could not extract rate from BCV HTML.');
+        console.warn('>>> [BCV SCRAPER WARNING] Could not extract rate from BCV HTML.');
         return;
       }
       
       const rate = parseFloat(rateText);
       if (isNaN(rate)) {
-        this.logger.warn('Parsed rate is NaN');
+        console.warn('>>> [BCV SCRAPER WARNING] Parsed rate is NaN');
         return;
       }
 
-      this.logger.log(`Extracted Rate: ${rate}`);
+      console.log(`>>> [BCV SCRAPER] Extracted Rate: ${rate}`);
 
       await this.prisma.globalConfig.upsert({
         where: { id: 'global' },
@@ -52,10 +52,10 @@ export class ScraperService implements OnModuleInit {
         create: { id: 'global', bcvRate: rate }
       });
 
-      this.logger.log('GlobalConfig updated successfully with new BCV rate.');
+      console.log('>>> [BCV SCRAPER SUCCESS] GlobalConfig updated successfully with new BCV rate.');
       
     } catch (error: any) {
-      this.logger.error(`Error scraping BCV: ${error.message}`);
+      console.error(`>>> [BCV SCRAPER ERROR] Error scraping BCV: ${error.message}`);
     }
   }
 }
