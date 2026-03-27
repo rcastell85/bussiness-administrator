@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Trash2, ImagePlus } from 'lucide-react';
 import client from '../api/client';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -10,8 +11,11 @@ interface ProductModalProps {
 }
 
 const ProductModal = ({ isOpen, onClose, product, onSuccess }: ProductModalProps) => {
+    const { exchangeRate } = useAuthStore();
     const [name, setName] = useState('');
     const [priceBaseUsd, setPriceBaseUsd] = useState('');
+    const [priceInVes, setPriceInVes] = useState('');
+    const [currencyMode, setCurrencyMode] = useState<'USD' | 'VES'>('USD');
     const [stockActual, setStockActual] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [loading, setLoading] = useState(false);
@@ -22,15 +26,19 @@ const ProductModal = ({ isOpen, onClose, product, onSuccess }: ProductModalProps
         if (isOpen) {
             if (product) {
                 setName(product.name);
-                setPriceBaseUsd(product.priceBaseUsd.toString());
+                const usdVal = product.priceBaseUsd.toString();
+                setPriceBaseUsd(usdVal);
+                setPriceInVes(exchangeRate ? (Number(usdVal) * exchangeRate).toFixed(2) : '');
                 setStockActual(product.stockActual.toString());
                 setImageUrl(product.imageUrl || '');
             } else {
                 setName('');
                 setPriceBaseUsd('');
+                setPriceInVes('');
                 setStockActual('');
                 setImageUrl('');
             }
+            setCurrencyMode('USD');
             setConfirmingDelete(false);
             setDeleteError('');
         }
@@ -169,22 +177,55 @@ const ProductModal = ({ isOpen, onClose, product, onSuccess }: ProductModalProps
                         </div>
 
                         <div className="input-row">
-                            <div className="input-group">
-                                <label>Costo o Precio (USD)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={priceBaseUsd}
-                                    onChange={e => setPriceBaseUsd(e.target.value)}
-                                    placeholder="0.00"
-                                />
+                            <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                    <label style={{ margin: 0 }}>Precio</label>
+                                    <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', fontSize: '12px', fontWeight: '700' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrencyMode('USD')}
+                                            style={{ padding: '4px 12px', background: currencyMode === 'USD' ? 'var(--brand)' : 'white', color: currencyMode === 'USD' ? 'white' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
+                                        >$ USD</button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrencyMode('VES')}
+                                            style={{ padding: '4px 12px', background: currencyMode === 'VES' ? 'var(--brand)' : 'white', color: currencyMode === 'VES' ? 'white' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
+                                        >Bs. VES</button>
+                                    </div>
+                                </div>
+                                {currencyMode === 'USD' ? (
+                                    <div>
+                                        <input
+                                            type="number" step="0.01" min="0"
+                                            value={priceBaseUsd}
+                                            onChange={e => {
+                                                setPriceBaseUsd(e.target.value);
+                                                setPriceInVes(exchangeRate && e.target.value ? (Number(e.target.value) * exchangeRate).toFixed(2) : '');
+                                            }}
+                                            placeholder="0.00 USD"
+                                        />
+                                        {priceInVes && <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>≈ {priceInVes} Bs.</p>}
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <input
+                                            type="number" step="0.01" min="0"
+                                            value={priceInVes}
+                                            onChange={e => {
+                                                setPriceInVes(e.target.value);
+                                                const usd = exchangeRate && e.target.value ? (Number(e.target.value) / exchangeRate).toFixed(4) : '';
+                                                setPriceBaseUsd(usd);
+                                            }}
+                                            placeholder="0.00 Bs."
+                                        />
+                                        {priceBaseUsd && <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>≈ ${priceBaseUsd} USD</p>}
+                                    </div>
+                                )}
                             </div>
                             <div className="input-group">
                                 <label>Stock Inicial (Opcional)</label>
                                 <input
-                                    type="number"
-                                    min="0"
+                                    type="number" min="0"
                                     value={stockActual}
                                     onChange={e => setStockActual(e.target.value)}
                                     placeholder="0"
