@@ -10,61 +10,78 @@ export class SuppliesService {
   ) {}
 
   async findAll() {
-    const tenantId = this.tenantsService.getTenantId();
-    return this.prisma.supplyItem.findMany({
-      where: { tenantId },
-      include: {
-        history: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
+    try {
+      const tenantId = this.tenantsService.getTenantId();
+      return await this.prisma.supplyItem.findMany({
+        where: { tenantId },
+        include: {
+          history: {
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+          },
         },
-      },
-      orderBy: { name: 'asc' },
-    });
+        orderBy: { name: 'asc' },
+      });
+    } catch (error) {
+      console.error('Error fetching supplies:', error);
+      throw error;
+    }
   }
 
   async create(data: { name: string; unit: string; initialStock?: number }) {
-    const tenantId = this.tenantsService.getTenantId();
-    return this.prisma.supplyItem.create({
-      data: {
-        name: data.name,
-        unit: data.unit,
-        stockActual: data.initialStock || 0,
-        tenantId,
-      },
-    });
+    try {
+      const tenantId = this.tenantsService.getTenantId();
+      console.log('Creating supply for tenant:', tenantId, 'with data:', data);
+      
+      return await this.prisma.supplyItem.create({
+        data: {
+          name: data.name,
+          unit: data.unit,
+          stockActual: data.initialStock || 0,
+          tenantId,
+        },
+      });
+    } catch (error) {
+      console.error('Error creating supply:', error);
+      throw error;
+    }
   }
 
   async recordHistory(data: { supplyItemId: string; type: 'ENTRY' | 'EXIT'; quantity: number; note?: string }) {
-    const tenantId = this.tenantsService.getTenantId();
-    return this.prisma.$transaction(async (tx) => {
-      // Check ownership
-      const item = await tx.supplyItem.findFirst({ where: { id: data.supplyItemId, tenantId } });
-      if (!item) throw new Error('Item not found');
+    try {
+      const tenantId = this.tenantsService.getTenantId();
+      return await this.prisma.$transaction(async (tx) => {
+        // Check ownership
+        const item = await tx.supplyItem.findFirst({ where: { id: data.supplyItemId, tenantId } });
+        if (!item) throw new Error('Item not found');
 
-      // Create history record
-      const history = await tx.supplyHistory.create({
-        data: {
-          supplyItemId: data.supplyItemId,
-          type: data.type,
-          quantity: data.quantity,
-          note: data.note,
-        },
-      });
-
-      // Update stock
-      const adjustment = data.type === 'ENTRY' ? data.quantity : -data.quantity;
-      await tx.supplyItem.update({
-        where: { id: data.supplyItemId },
-        data: {
-          stockActual: {
-            increment: adjustment,
+        // Create history record
+        const history = await tx.supplyHistory.create({
+          data: {
+            supplyItemId: data.supplyItemId,
+            type: data.type,
+            quantity: data.quantity,
+            note: data.note,
           },
-        },
-      });
+        });
 
-      return history;
-    });
+        // Update stock
+        const adjustment = data.type === 'ENTRY' ? data.quantity : -data.quantity;
+        await tx.supplyItem.update({
+          where: { id: data.supplyItemId },
+          data: {
+            stockActual: {
+              increment: adjustment,
+            },
+          },
+        });
+
+        return history;
+      });
+    } catch (error) {
+      console.error('Error recording supply history:', error);
+      throw error;
+    }
   }
 
   async delete(id: string) {
