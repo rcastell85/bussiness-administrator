@@ -125,7 +125,7 @@ const Home = () => {
     if (loading) return <div style={{ padding: '20px' }}>Cargando resumen...</div>;
 
     return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 24px 0', flexShrink: 0 }}>
                 <div className="filter-tabs">
                     <button
