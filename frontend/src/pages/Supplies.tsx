@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import client from '../api/client';
-import { Package, Plus, ArrowUpRight, ArrowDownRight, History, Trash2, Search } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownRight, History, Trash2, Search } from 'lucide-react';
 import SupplyModal from '../components/SupplyModal';
 import SupplyAdjustmentModal from '../components/SupplyAdjustmentModal';
 import { format } from 'date-fns';
