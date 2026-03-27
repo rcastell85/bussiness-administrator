@@ -3,10 +3,8 @@ import client from '../api/client';
 import { useAuthStore } from '../store/useAuthStore';
 
 const Login = () => {
-  const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState('admin@rosa.com');
-  const [password, setPassword] = useState('password123');
-  const [tenantId, setTenantId] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,19 +15,11 @@ const Login = () => {
     setLoading(true);
     setError('');
     try {
-      if (isRegister) {
-        // First register
-        await client.post('/auth/signup', { email, password, tenantId: tenantId || 'default_tenant' });
-        // Then immediately log in
-        const { data } = await client.post('/auth/login', { email, password });
-        setAuth(data.user, data.access_token, data.user.tenantId);
-      } else {
-        // Normal login
-        const { data } = await client.post('/auth/login', { email, password });
-        setAuth(data.user, data.access_token, data.user.tenantId);
-      }
+      // Normal login
+      const { data } = await client.post('/auth/login', { email, password });
+      setAuth(data.user, data.access_token, data.user.tenantId);
     } catch (err: any) {
-      setError(err.response?.data?.message || (isRegister ? 'Error al registrarse' : 'Error al iniciar sesión'));
+      setError(err.response?.data?.message || 'Error al iniciar sesión');
     } finally {
       setLoading(false);
     }
@@ -40,7 +30,7 @@ const Login = () => {
       <div className="login-card">
         <h1 style={{ marginBottom: '8px' }}>AdminSaaS</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
-          {isRegister ? 'Crea una nueva cuenta' : 'Inicia sesión en tu negocio'}
+          Inicia sesión en tu negocio
         </p>
 
         {error && <div className="error-box">{error}</div>}
@@ -56,19 +46,6 @@ const Login = () => {
             />
           </div>
 
-          {isRegister && (
-            <div className="input-group">
-              <label>Nombre de la Tienda (ID corto sin espacios)</label>
-              <input
-                type="text"
-                value={tenantId}
-                onChange={(e) => setTenantId(e.target.value.toLowerCase().replace(/\s/g, ''))}
-                placeholder="ej. mipanaderia"
-                required={isRegister}
-              />
-            </div>
-          )}
-
           <div className="input-group">
             <label>Contraseña</label>
             <input
@@ -80,9 +57,7 @@ const Login = () => {
           </div>
 
           <button type="submit" className="login-btn" disabled={loading}>
-            {loading
-              ? (isRegister ? 'Registrando...' : 'Entrando...')
-              : (isRegister ? 'Crear Cuenta' : 'Entrar')}
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
 
         </form>
