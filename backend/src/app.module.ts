@@ -11,6 +11,7 @@ import { CustomersModule } from './customers/customers.module';
 import { SalesModule } from './sales/sales.module';
 import { ReportsModule } from './reports/reports.module';
 import { ScraperModule } from './scraper/scraper.module';
+import { SuppliesModule } from './supplies/supplies.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -24,7 +25,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     CustomersModule, 
     SalesModule, 
     ReportsModule,
-    ScraperModule
+    ScraperModule,
+    SuppliesModule
   ],
   controllers: [AppController],
   providers: [AppService],
