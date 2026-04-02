@@ -82,65 +82,153 @@ const Home = () => {
         });
     }, [sales, saleSearch]);
 
-    const handleGeneratePDF = () => {
-        const doc = new jsPDF();
-        const dateStr = format(new Date(), "dd 'de' MMMM, yyyy", { locale: es });
+    const handleGenerateManagementReport = async () => {
+        try {
+            setLoading(true);
+            const now = new Date();
+            let start: Date;
+            let end = endOfDay(now);
 
-        doc.setFontSize(20);
-        doc.text('Resumen de Caja Diario', 14, 22);
-        doc.setFontSize(12);
-        doc.text(`Fecha: ${dateStr}`, 14, 30);
+            if (timeFilter === 'week') {
+                start = startOfWeek(now, { weekStartsOn: 1 });
+            } else if (timeFilter === 'month') {
+                start = startOfMonth(now);
+            } else if (timeFilter === 'custom' && customStart && customEnd) {
+                start = startOfDay(new Date(customStart + 'T00:00:00'));
+                end = endOfDay(new Date(customEnd + 'T00:00:00'));
+            } else {
+                start = startOfDay(now);
+            }
 
-        doc.setFontSize(14);
-        doc.text('Totales', 14, 45);
+            const { data } = await client.get(`/reports/performance?start=${start.toISOString()}&end=${end.toISOString()}`);
+            
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const dateRangeStr = `${format(start, 'dd/MM/yyyy')} al ${format(end, 'dd/MM/yyyy')}`;
 
-        if (summary) {
-            doc.setFontSize(11);
-            doc.text(`Total Ingresos: $${Number(summary.totalUsd).toFixed(2)} | Bs. ${Number(summary.totalVes).toFixed(2)}`, 14, 52);
-            doc.text(`Transacciones: ${summary.count}`, 14, 58);
+            // --- Header ---
+            doc.setFontSize(22);
+            doc.setTextColor(44, 62, 80);
+            doc.text(data.tenant?.name || 'Reporte de Gestión', 14, 22);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            if (data.tenant?.rif) doc.text(`RIF: ${data.tenant.rif}`, 14, 28);
+            doc.text(`Período: ${dateRangeStr}`, 14, 34);
+            doc.text(`Generado: ${format(new Date(), "dd/MM/yyyy hh:mm a")}`, pageWidth - 14, 34, { align: 'right' });
+
+            doc.setDrawColor(200);
+            doc.line(14, 38, pageWidth - 14, 38);
+
+            // --- Section 1: Financial Summary ---
+            doc.setFontSize(14);
+            doc.setTextColor(44, 62, 80);
+            doc.text('1. Resumen Financiero', 14, 50);
+            
+            autoTable(doc, {
+                startY: 55,
+                head: [['Concepto', 'Monto USD', 'Monto VES', 'Cant. Ventas']],
+                body: [[
+                    'Total Ventas en el Período',
+                    `$${Number(data.summary.totalUsd).toFixed(2)}`,
+                    `Bs. ${Number(data.summary.totalVes).toFixed(2)}`,
+                    data.summary.count
+                ]],
+                theme: 'grid',
+                headStyles: { fillColor: [52, 73, 94] }
+            });
+
+            // --- Section 2: Sales per Product ---
+            let currentY = (doc as any).lastAutoTable.finalY + 15;
+            doc.text('2. Ventas por Producto', 14, currentY);
+            
+            autoTable(doc, {
+                startY: currentY + 5,
+                head: [['Producto', 'Cantidad Vendida', 'Ingreso Estimado ($)']],
+                body: data.productSales.map((p: any) => [
+                    p.name,
+                    p.count,
+                    `$${Number(p.total).toFixed(2)}`
+                ]),
+                theme: 'striped',
+                headStyles: { fillColor: [41, 128, 185] }
+            });
+
+            // --- Section 3: Inflow of Raw Materials ---
+            currentY = (doc as any).lastAutoTable.finalY + 15;
+            if (currentY > 250) { doc.addPage(); currentY = 20; }
+            doc.text('3. Ingreso de Materia Prima (Insumos)', 14, currentY);
+
+            if (data.supplyEntries.length === 0) {
+                doc.setFontSize(10);
+                doc.setTextColor(150);
+                doc.text('No se registraron ingresos de insumos en este período.', 14, currentY + 10);
+                currentY += 15;
+            } else {
+                autoTable(doc, {
+                    startY: currentY + 5,
+                    head: [['Insumo', 'Cantidad', 'Unidad', 'Nota', 'Fecha']],
+                    body: data.supplyEntries.map((e: any) => [
+                        e.name,
+                        Number(e.quantity).toFixed(2),
+                        e.unit,
+                        e.note || '-',
+                        format(new Date(e.date), 'dd/MM/yyyy')
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: [39, 174, 96] }
+                });
+                currentY = (doc as any).lastAutoTable.finalY;
+            }
+
+            // --- Section 4: Current Inventory Snapshot ---
+            currentY += 15;
+            if (currentY > 230) { doc.addPage(); currentY = 20; }
+            doc.setFontSize(14);
+            doc.setTextColor(44, 62, 80);
+            doc.text('4. Inventario Actual de Productos', 14, currentY);
+            
+            autoTable(doc, {
+                startY: currentY + 5,
+                head: [['Producto', 'Stock Actual']],
+                body: data.inventory.map((p: any) => [
+                    p.name,
+                    p.stockActual
+                ]),
+                theme: 'grid',
+                headStyles: { fillColor: [127, 140, 141] }
+            });
+
+            doc.save(`Reporte_Gestion_${data.tenant?.name || 'Ventas'}_${format(start, 'yyyyMMdd')}.pdf`);
+        } catch (err) {
+            console.error('Error generating report:', err);
+            alert('Error al generar el reporte.');
+        } finally {
+            setLoading(false);
         }
-
-        const tableColumn = ["Hora", "Cliente/Tipo", "Método", "Total $", "Total Bs."];
-        const tableRows: any[] = [];
-
-        sales.forEach(sale => {
-            const time = format(new Date(sale.createdAt), "hh:mm a");
-            const type = sale.paymentType === 'fiao' ? `Crédito (${sale.customer?.nombre || 'N/A'})` : 'Contado';
-            tableRows.push([
-                time,
-                type,
-                sale.paymentMethod,
-                `$${Number(sale.totalUsd).toFixed(2)}`,
-                `Bs. ${Number(sale.totalVes).toFixed(2)}`
-            ]);
-        });
-
-        autoTable(doc, {
-            startY: 70,
-            head: [tableColumn],
-            body: tableRows,
-            theme: 'striped',
-            headStyles: { fillColor: [44, 62, 80] }
-        });
-
-        doc.save(`Cierre_Caja_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
 
     if (loading) return <div style={{ padding: '20px' }}>Cargando resumen...</div>;
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 16px 0', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 16px 0', flexShrink: 0, gap: '12px' }}>
                 <div className="filter-tabs">
                     <button className={timeFilter === 'today' ? 'active' : ''} onClick={() => setTimeFilter('today')}>Hoy</button>
                     <button className={timeFilter === 'week' ? 'active' : ''} onClick={() => setTimeFilter('week')}>Semana</button>
                     <button className={timeFilter === 'month' ? 'active' : ''} onClick={() => setTimeFilter('month')}>Mes</button>
                     <button className={timeFilter === 'custom' ? 'active' : ''} onClick={() => setTimeFilter('custom')}>Período</button>
                 </div>
-                <button onClick={handleGeneratePDF} className="export-btn" disabled={sales.length === 0 || loading}>
-                    <Download size={18} />
-                    <span>PDF</span>
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={handleGenerateManagementReport} className="secondary-btn" title="Reporte de Gestión Completo">
+                        <FileText size={18} />
+                        <span className="hide-mobile">Gestión</span>
+                    </button>
+                    <button onClick={handleGeneratePDF} className="export-btn" disabled={sales.length === 0 || loading} title="Cierre de Caja">
+                        <Download size={18} />
+                        <span className="hide-mobile">Cierre</span>
+                    </button>
+                </div>
             </div>
 
             {timeFilter === 'custom' && (
