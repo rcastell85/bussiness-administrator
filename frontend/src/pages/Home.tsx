@@ -208,7 +208,52 @@ const Home = () => {
         }
     };
 
+    const handleGeneratePDF = () => {
+        const doc = new jsPDF();
+        const dateStr = format(new Date(), "dd 'de' MMMM, yyyy", { locale: es });
+
+        doc.setFontSize(20);
+        doc.text('Resumen de Caja Diario', 14, 22);
+        doc.setFontSize(12);
+        doc.text(`Fecha: ${dateStr}`, 14, 30);
+
+        doc.setFontSize(14);
+        doc.text('Totales', 14, 45);
+
+        if (summary) {
+            doc.setFontSize(11);
+            doc.text(`Total Ingresos: $${Number(summary.totalUsd).toFixed(2)} | Bs. ${Number(summary.totalVes).toFixed(2)}`, 14, 52);
+            doc.text(`Transacciones: ${summary.count}`, 14, 58);
+        }
+
+        const tableColumn = ["Hora", "Cliente/Tipo", "Método", "Total $", "Total Bs."];
+        const tableRows: any[] = [];
+
+        sales.forEach(sale => {
+            const time = format(new Date(sale.createdAt), "hh:mm a");
+            const type = sale.paymentType === 'fiao' ? `Crédito (${sale.customer?.nombre || 'N/A'})` : 'Contado';
+            tableRows.push([
+                time,
+                type,
+                sale.paymentMethod,
+                `$${Number(sale.totalUsd).toFixed(2)}`,
+                `Bs. ${Number(sale.totalVes).toFixed(2)}`
+            ]);
+        });
+
+        autoTable(doc, {
+            startY: 70,
+            head: [tableColumn],
+            body: tableRows,
+            theme: 'striped',
+            headStyles: { fillColor: [44, 62, 80] }
+        });
+
+        doc.save(`Cierre_Caja_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    };
+
     if (loading) return <div style={{ padding: '20px' }}>Cargando resumen...</div>;
+
 
     return (
         <div>
